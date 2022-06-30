@@ -15,12 +15,12 @@ const JWTConfig = {
 
 const passportVerify = async (email, password, done) => {
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).select({ "salt": 1 });
         if (!user) {
             done(null, false, { reason: '이메일 또는 비밀번호가 올바르지 않습니다.' });
             return;
         }
-        const result = await UserService.Authorize(email, password, user.salt);
+        const result = await UserService.authorize(email, password, user.salt);
         if (result) {
             done(null, user);
             return;

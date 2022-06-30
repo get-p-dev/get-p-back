@@ -15,7 +15,7 @@ const Email = require('../models/Email');
 const User = require('../models/User');
 
 class EmailService {
-    SendVerifyEmail(email) {
+    sendVerifyEmail(email) {
         return new Promise((resolve, reject) => {
             crypto.randomBytes(64, async (err, buf) => {
                 if (err) throw err;
@@ -35,7 +35,7 @@ class EmailService {
         });
     }
     
-    async VerifyEmail(emailDTO) {
+    async verifyEmail(emailDTO) {
         const { email, code } = emailDTO;
         try {
             const _email = await Email.findOne({ email });

@@ -16,12 +16,12 @@ const companySchema = new mongoose.Schema({
         required: true,
     },
     // 대표자
-    representativeDirector: {
+    ceo: {
         type: String,
         required: true,
     },
     // 기업 소개
-    discription: {
+    description: {
         type: String
     },
     // 대표 전화

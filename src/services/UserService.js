@@ -4,7 +4,7 @@ const EmailService = require('./EmailService');
 
 class UserService {
     isValidEmail(email) {
-        const emailReg = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$/i;
+        const emailReg = /^[a-zA-Z0-9+-\_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
         if (emailReg.test(email)) {
             return true;
         } else {
@@ -21,8 +21,8 @@ class UserService {
         }
     }
 
-    async SignUp(userDTO) {
-        const { email, password } = userDTO;
+    async signUp(userDTO) {
+        const { email, password, category } = userDTO;
         switch (true) {
             case !this.isValidEmail(email):
                 throw '올바른 이메일을 입력해주세요.';
@@ -32,7 +32,7 @@ class UserService {
                 try {
                     const user = await User.findOne({ email });
                     if (user) throw '이미 가입된 이메일 입니다. 다른 이메일을 입력해주세요.';
-                    return await this.GenerateUser(email, password);
+                    return await this.generateUser(email, password, category);
                 } catch (err) {
                     console.log(err);
                     throw '회원 가입에 문제가 생겼습니다. 다시 시도해주세요.';
@@ -40,7 +40,7 @@ class UserService {
         }
     }
 
-    async GenerateUser(email, password) {
+    async generateUser(email, password, category) {
         return new Promise((resolve, reject) => {
             crypto.randomBytes(64, (err, buf) => {
                 if (err) throw err;
@@ -50,28 +50,18 @@ class UserService {
                         email,
                         password: key.toString('base64'),
                         salt: buf.toString('base64'),
+                        category,
                         verify: false
                     });
                     await user.save();
-                    EmailService.SendVerifyEmail(email);
+                    EmailService.sendVerifyEmail(email);
                     resolve(user);
                 });
             });
         });
     }
 
-    async SignIn(userDTO) {
-        const { email, password } = userDTO;
-        try {
-            const user = await User.findOne({ email })
-            if (!await this.Authorize(email, password, user.salt)) throw '이메일 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요.';
-        } catch (err) {
-            console.log(err);
-            throw '로그인에 문제가 생겼습니다. 다시 시도해주세요.';
-        }
-    }
-
-    async Authorize(email, password, salt) {
+    async authorize(email, password, salt) {
         return new Promise((resolve, reject) => {
             crypto.pbkdf2(password, salt, 100000, 64, 'sha512', async (err, key) => {
                 if (err) throw err;
@@ -88,17 +78,16 @@ class UserService {
         });
     }
 
-    async Delete(email) {
+    async delete(userId) {
         try {
-            const user = await User.findOne({ email });
-            await User.deleteOne({ _id: user._id });
+            await User.deleteOne({ _id: userId });
         } catch (err) {
             console.err(err);
             throw '회원 탈퇴에 문제가 생겼습니다. 다시 시도해주세요.';
         }
     }
 
-    async UserList() {
+    async getUserList() {
         try {
             return await User.find({});
         } catch (err) {

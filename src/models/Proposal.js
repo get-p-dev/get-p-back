@@ -5,18 +5,17 @@ const proposalSchema = new mongoose.Schema({
         type: mongoose.ObjectId,
         required: true
     },
-    people: {
+    proponent: {
         type: mongoose.ObjectId,
         required: true
     },
-    discription: {
+    description: {
         type: String,
         required: true
     },
-    
     createdAt: {
         type: Date,
-        default: Date.noew
+        default: Date.now
     }
 });
 

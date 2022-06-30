@@ -7,7 +7,9 @@ const projectSchema = new mongoose.Schema({
         required: true
     },
     // 받은 제안 리스트
-    proposals: [mongoose.ObjectId],
+    proposals: {
+        type: [mongoose.ObjectId]
+    },
     // 받은 제안들 중에서 회사가 프로젝트를 수행하도록 고용한 people
     performer: {
         type: mongoose.ObjectId
@@ -63,12 +65,12 @@ const projectSchema = new mongoose.Schema({
     },
     // 프로젝트 태그 (최대 8개)
     tag: {
-        type: String,
+        type: [String],
         required: true
     },
     createdAt: {
         type: Date,
-        default: Date.noew
+        default: Date.now
     }
 });
 

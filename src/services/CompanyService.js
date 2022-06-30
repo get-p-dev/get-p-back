@@ -1,14 +1,16 @@
 const Company = require('../models/Company');
+const Email = require('../models/Email');
+const User = require('../models/User');
 const UserService = require('./UserService');
 
 class CompanyService {
-    async SignUp(companyDTO) {
+    async signUp(companyDTO) {
         const {
             companyName,
             // companyImage,
             industry,
-            representativeDirector,
-            discription,
+            ceo,
+            description,
             phoneNumber,
             url,
             address,
@@ -16,14 +18,14 @@ class CompanyService {
             password
         } = companyDTO;
         try {
-            const user = await UserService.SignUp({ email, password });
+            const user = await UserService.signUp({ email, password, category: "company" });
             const userObjectId = user._id;
             const company = new Company({
                 companyName,
                 // companyImage,
                 industry,
-                representativeDirector,
-                discription,
+                ceo,
+                description,
                 phoneNumber,
                 url,
                 address,
@@ -36,7 +38,19 @@ class CompanyService {
         } 
     }
 
-    async CompanyList() {
+    async delete(userId) {
+        try {
+            const user = await User.findOne({ _id: userId });
+            await Email.deleteOne({ email: user.email });
+            await User.deleteOne({ _id: userId });
+            await Company.deleteOne({ userObjectId: userId });
+        } catch (err) {
+            console.err(err);
+            throw '회원 탈퇴에 문제가 생겼습니다. 다시 시도해주세요.';
+        }
+    }
+
+    async getCompanyList() {
         try {
             return await Company.find({});
         } catch (err) {

@@ -4,93 +4,110 @@ const passport = require('passport');
 const router = express.Router();
 const ProjectService = require('../../services/ProjectService');
 
-// create project
-router.post('/', async (req, res) => {
-    try {
-        const projectDTO = req.body;
-        await ProjectService.createProject(projectDTO);
-        res.status(201);
-    } catch (err) {
-        res.status(400).json({ message: err });
-    }
-});
-
-// read project
-router.get('/:id', async (req, res) => {
-    try {
-        const project = await ProjectService.readProject(req.params.id);
-        res.status(200).json(project);
-    } catch (err) {
-        res.status(404).json({ message: err });
-    }
-});
-
-// update project
-router.put('/:id', async (req, res) => {
-    try {
-        const projectDTO = req.body;
-        await ProjectService.updateProject(req.params.id, projectDTO);
-        res.status(200);
-    } catch (err) {
-        res.status(400).json({ message: err });
-    }
-});
-
-// delete project
-router.delete('/:id', async (req, res) => {
-    try {
-        await ProjectService.deleteProject(req.params.id);
-        res.status(200);
-    } catch (err) {
-        res.status(400).json({ message: err });
-    }
-});
-
-// get project list 
+// 전체 프로젝트 목록 조회
 router.get('/', async (req, res) => {
     try {
         const projects = await ProjectService.getProjectList();
+        console.log(`[GET] /projects`);  
         res.status(200).json(projects);
     } catch (err) {
         res.status(404).json({ message: err });
     }
 });
 
-// select performer
-router.post('/:id/performer', async (req, res) => {
+// 프로젝트 생성
+router.post('/', passport.authenticate('jwt', { session: false }), async (req, res) => {
     try {
-        await ProjectService.selectPerformer(req.params.id, r);
-        res.status(200);
+        if (req.user.category === "company") {
+            let projectDTO = req.body;
+            projectDTO.requester = req.user._id;
+            await ProjectService.createProject(projectDTO);
+            console.log(`[POST] /projects ${req.user.email}`);   
+            res.status(200).send();
+        } else {
+            res.status(403).json({ message: '프로젝트 생성은 회사만 가능합니다.' });
+        }
+    } catch (err) {
+        res.status(400).json({ message: err });
+    }
+});
+
+// 프로젝트 조회
+router.get('/:projectId', async (req, res) => {
+    try {
+        const project = await ProjectService.readProject(req.params.projectId);
+        console.log(`[GET] /projects/${req.params.projectId}`);  
+        res.status(200).json(project);
     } catch (err) {
         res.status(404).json({ message: err });
     }
 });
 
-// read proposal
-router.get('/:projectId/proposals/:userId', async (req, res) => {
+// 프로젝트 수정
+router.put('/:projectId', passport.authenticate('jwt', { session: false }), async (req, res) => {
     try {
-        const proposal = ProjectService.readProposal(req.params.projectId, req.params.userId);
-        res.status(200).json(proposal);
+        await ProjectService.updateProject(req.user._id, req.params.projectId, req.body);
+        console.log(`[PUT] /projects/${req.params.projectId}`);  
+        res.status(200).send();
+    } catch (err) {
+        console.log(err);
+        res.status(400).json({ message: err });
+    }
+});
+
+// 프로젝트 삭제
+router.delete('/:projectId', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    try {
+        await ProjectService.deleteProject(req.user._id, req.params.projectId);
+        console.log(`[DELETE] /projects/${req.params.projectId}`);  
+        res.status(200).send();
+    } catch (err) {
+        res.status(400).json({ message: err });
+    }
+});
+
+// 수행자 선택
+router.post('/:projectId/performer', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    try {
+        await ProjectService.selectPerformer(req.user._id, req.params.projectId, req.body.proposalId);
+        console.log(`[POST] /projects/${req.params.projectId}/performer`);  
+        res.status(200).send();
     } catch (err) {
         res.status(404).json({ message: err });
     }
 });
 
-// send proposal
-router.post('/:id/proposals/', async (req, res) => {
+// 제안 전송
+router.post('/:projectId/proposals', passport.authenticate('jwt', { session: false }), async (req, res) => {
     try {
-        await ProjectService.sendProposal(req.params.id);
-        res.status(200);
+        let proposalDTO = req.body;
+        proposalDTO.proponent = req.user._id;
+        proposalDTO.project = req.params.projectId;
+        await ProjectService.sendProposal(proposalDTO);
+        console.log(`[POST] /projects/${req.params.projectId}/proposals`);  
+        res.status(200).send();
     } catch (err) {
         res.status(404).json({ message: err });
     }
 });
 
-// get proposal list 
-router.get('/:id/proposals/', async (req, res) => {
+// 전체 제안 목록 조회
+router.get('/:projectId/proposals', async (req, res) => {
     try {
-        const proposals = await ProjectService.getProposalList(req.params.id);
+        const proposals = await ProjectService.getProposalList(req.params.projectId);
+        console.log(`[GET] /projects/${req.params.projectId}/proposals`);  
         res.status(200).json(proposals);
+    } catch (err) {
+        res.status(404).json({ message: err });
+    }
+});
+
+// 제안 조회
+router.get('/:projectId/proposals/:proposalId', async (req, res) => {
+    try {
+        const proposal = await ProjectService.readProposal(req.params.proposalId);
+        console.log(`[GET] /projects/${req.params.projectId}/proposals/${req.params.proposalId}`);  
+        res.status(200).json(proposal);
     } catch (err) {
         res.status(404).json({ message: err });
     }
